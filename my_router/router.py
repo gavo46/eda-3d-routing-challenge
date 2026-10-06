@@ -12,6 +12,7 @@ from m3d.model import Instance, NetRoute, Submission
  
 INF = 1 << 62
 LNS_SECONDS = 20
+LNS_SECONDS_PER_NET = 0.1
  
 class Router:
     def __init__(self, inst):
@@ -172,7 +173,7 @@ def route_instance(inst, passes=10):
         "sinks_desc": sorted(nets, key=lambda n: (-len(probe.net_pins[n]), -probe.bbox(n))),
         "delay_desc": sorted(nets, key=lambda n: ideal_cost[n], reverse=True),
     }
-    
+
     best = None
     for name, order in orders.items():
         r = Router(inst)
