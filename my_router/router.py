@@ -14,6 +14,7 @@ INF = 1 << 62
 LNS_SECONDS = 20
 LNS_SECONDS_PER_NET = 0.4
  
+# exp 7: introduce ideal path conflict optimization. Replaced sinks ordering with conflicts ordering, so the constants were not kept entirely.
 class Router:
     def __init__(self, inst):
         self.inst = inst
@@ -164,14 +165,26 @@ def route_instance(inst, passes=10):
     probe = Router(inst)
     # improvement: a new order to go by delay to see if this improves anything
     ideal_cost = {}
+    ideal_tree = {}
     for n in nets:
         t = probe.route_net(n, ignore_wires=True)
         ideal_cost[n] = t[2] if t else 0
+        ideal_tree[n] = t[0] if t else set()
+
+    # how many nets' ideal routes want each grid point
+    demand = {}
+    for n in nets:
+        for v in ideal_tree[n]:
+            demand[v] = demand.get(v, 0) + 1
+
+    # a net's conflict score: total overlap with other nets' ideal routes
+    conflicts = {n: sum(demand[v] - 1 for v in ideal_tree[n]) for n in nets}
 
     orders = {
         "bbox_desc": sorted(nets, key=probe.bbox, reverse=True),
-        "sinks_desc": sorted(nets, key=lambda n: (-len(probe.net_pins[n]), -probe.bbox(n))),
+        #"sinks_desc": sorted(nets, key=lambda n: (-len(probe.net_pins[n]), -probe.bbox(n))),
         "delay_desc": sorted(nets, key=lambda n: ideal_cost[n], reverse=True),
+        "conflict_desc": sorted(nets, key=lambda n: conflicts[n], reverse=True),
     }
 
     best = None
