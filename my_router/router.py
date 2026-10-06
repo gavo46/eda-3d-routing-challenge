@@ -12,7 +12,7 @@ from m3d.model import Instance, NetRoute, Submission
  
 INF = 1 << 62
 LNS_SECONDS = 20
-LNS_SECONDS_PER_NET = 0.1
+LNS_SECONDS_PER_NET = 0.4
  
 class Router:
     def __init__(self, inst):
@@ -180,7 +180,8 @@ def route_instance(inst, passes=10):
         if not r.initial(order):
             continue
         r.refine(passes)
-        r.lns(time.time() + LNS_SECONDS)
+        # Experiment 6: expand/contract by case size
+        r.lns(time.time() + LNS_SECONDS_PER_NET * len(inst.nets))
         r.refine(passes)
         if best is None or r.total() < best.total():
             best = r
