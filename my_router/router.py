@@ -161,10 +161,18 @@ class Router:
 def route_instance(inst, passes=10):
     nets = [n.id for n in inst.nets]
     probe = Router(inst)
+    # improvement: a new order to go by delay to see if this improves anything
+    ideal_cost = {}
+    for n in nets:
+        t = probe.route_net(n, ignore_wires=True)
+        ideal_cost[n] = t[2] if t else 0
+
     orders = {
         "bbox_desc": sorted(nets, key=probe.bbox, reverse=True),
         "sinks_desc": sorted(nets, key=lambda n: (-len(probe.net_pins[n]), -probe.bbox(n))),
+        "delay_desc": sorted(nets, key=lambda n: ideal_cost[n], reverse=True),
     }
+    
     best = None
     for name, order in orders.items():
         r = Router(inst)
